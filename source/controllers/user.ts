@@ -19,6 +19,7 @@ const transporter = config.nodemailer;
 const validateToken = (req: Request, res: Response, next: NextFunction) => {
     logging.info(NAMESPACE, 'Token validated, user authorized.');
     return res.status(200).json({
+        code : 200,
         message: 'Token(s) validated',
         data: res.locals
     });
@@ -30,8 +31,9 @@ const register = (req: Request, res: Response, next: NextFunction) => {
     bcryptjs.hash(password, 10, (hashError, hash) => {
         if (hashError) {
             return res.status(401).json({
-                message: hashError.message,
-                error: hashError
+                code    :401,
+                message : hashError.message,
+                data   : hashError
             });
         }
 
@@ -47,13 +49,16 @@ const register = (req: Request, res: Response, next: NextFunction) => {
             .save()
             .then((user) => {
                 return res.status(201).json({
-                    user
+                    code    : 201,
+                    message : 'success register user',
+                    data    : user
                 });
             })
             .catch((error) => {
                 return res.status(500).json({
-                    message: error.message,
-                    error
+                    code    : 500,
+                    message : error.message,
+                    data    : error
                 });
             });
     });
@@ -67,41 +72,50 @@ const login = (req: Request, res: Response, next: NextFunction) => {
         .then((users) => {
             if (users.length !== 1) {
                 return res.status(401).json({
-                    message: 'Unauthorized'
+                    code    : 401,
+                    message : 'Unauthorized',
+                    data    : []
                 });
             }
 
             bcryptjs.compare(password, users[0].password, (error, result) => {
                 if (error) {
                     return res.status(401).json({
-                        message: 'Password Mismatch'
+                        code    : 401,
+                        message : 'Password Mismatch',
+                        data    : error
                     });
                 } else if (result) {
                     signJWT(users[0], (_error, token) => {
                         if (_error) {
                             return res.status(500).json({
-                                message: _error.message,
-                                error: _error
+                                code    :500,
+                                message : _error.message,
+                                error   : _error
                             });
                         } else if (token) {
                             return res.status(200).json({
-                                message: 'Auth successful',
-                                token: token,
-                                user: users[0]
+                                code    : 200,
+                                message : 'Auth successful',
+                                token   : token,
+                                data    : users[0]
                             });
                         }
                     });
                 }else{
                     return res.status(401).json({
-                    message: 'Unauthorized'
-                });
+                        code    : 401,
+                        message : 'Unauthorized',
+                        data    : []
+                    });
                 }
             });
         })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json({
-                error: err
+        .catch((error) => {
+            return res.status(500).json({
+                code    : 500,
+                message : error.message,
+                data    : error
             });
         });
 };
@@ -112,15 +126,17 @@ const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
         .exec()
         .then((users) => {
             return res.status(200).json({
-                users: users,
-                count: users.length
+                code    : 200,
+                data   : users,
+                count   : users.length
             });
         })
         .catch((error) => {
             return res.status(500).json({
-                message: error.message,
-                error
-            });
+                    code    : 500,
+                    message : error.message,
+                    data    : error
+                });
         });
 };
 
@@ -142,15 +158,18 @@ const uploadAvatar = (req: Request, res: Response, next: NextFunction) => {
             }
 
             return res.status(200).json({
-                users: response,
-                avatar: req.file
+                code    : 200,
+                message : 'Success upload avatar',
+                data    : response,
+                avatar  : req.file
             });
         })
         .catch((error) => {
             return res.status(500).json({
-                message: error.message,
-                error
-            });
+                    code    : 500,
+                    message : error.message,
+                    data    : error
+                });
         });
 };
 
@@ -191,8 +210,9 @@ const forgotPassword = (req: Request, res: Response, next: NextFunction)=>{
             })
             .catch((error) => {
                 return res.status(500).json({
-                    message: error.message,
-                    error
+                    code    : 500,
+                    message : error.message,
+                    data    : error
                 });
             });
 
@@ -200,14 +220,17 @@ const forgotPassword = (req: Request, res: Response, next: NextFunction)=>{
             transporter.sendMail(mailOptions, function(error, info){
                 if (error) {
                     return res.status(500).json({
-                        message: error.message,
-                        error
+                        code    : 500,
+                        message : error.message,
+                        data    : error
                     });
                 } else {
  
                     console.log('Email sent: ' + info.response);
                     return res.status(200).json({
-                        message: "success send token , check your email"
+                        code    : 200,
+                        message : "success send token , check your email",
+                        data    : []
                     });
                 }
               });
@@ -215,14 +238,17 @@ const forgotPassword = (req: Request, res: Response, next: NextFunction)=>{
 
         }else{
             return res.status(500).json({
-                message: "cant find account",
+                code    : 500,
+                message : "cant find account",
+                data    : []
             });
         }
     })
     .catch((error) => {
         return res.status(500).json({
-            message: error.message,
-            error
+            code    : 500,
+            message : error.message,
+            data    : error
         });
     });
     
@@ -237,22 +263,26 @@ const updatePassword = (req: Request, res: Response, next: NextFunction) =>{
         bcryptjs.hash(password, 10, (hashError, hash) => {
             if (hashError) {
                 return res.status(401).json({
-                    message: hashError.message,
-                    error: hashError
+                    code    : 401,
+                    message : hashError.message,
+                    data    : hashError
                 });
             }
            const user = User.findByIdAndUpdate(tokens?.userId,{password:hash})
            .exec()
            .then((error)=>{
             return res.status(200).json({
-                message: "success update password"
+                code    : 200,
+                message: "success update password",
+                data    : []
             });
            })
            .catch((error)=>{
             return res.status(500).json({
-                message: error.message,
-                error
-            });
+                    code    : 500,
+                    message : error.message,
+                    data    : error
+                });
            });
 
         });
@@ -260,8 +290,9 @@ const updatePassword = (req: Request, res: Response, next: NextFunction) =>{
     })
     .catch((error) => {
         return res.status(500).json({
-            message: error.message,
-            error
+            code    : 500,
+            message : error.message,
+            data    : error
         });
     });
 

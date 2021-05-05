@@ -1,4 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate'
+
 import IBook from '../interfaces/books';
 
 const BookSchema: Schema = new Schema(
@@ -22,4 +24,5 @@ const BookSchema: Schema = new Schema(
     }
 );
 
+BookSchema.plugin(mongoosePaginate);
 export default mongoose.model<IBook>('Book', BookSchema);
